@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotel Rooms — Prototype</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Arial,sans-serif;background:#f5f6f8;color:#171717}
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside{background:#111827;color:#fff;padding:24px 16px;display:flex;flex-direction:column;gap:28px}
+  .logo{font-size:22px;font-weight:800;letter-spacing:-.4px}
+  .logo small{display:block;font-size:11px;font-weight:500;color:#9ca3af;margin-top:4px}
+  nav{display:grid;gap:8px}
+  nav button{all:unset;padding:11px 12px;border-radius:10px;cursor:pointer;color:#d1d5db;font-size:14px}
+  nav button:hover,nav button.active{background:#1f2937;color:#fff}
+  .aside-bottom{margin-top:auto;font-size:12px;color:#9ca3af;padding:10px 12px}
+  main{padding:28px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+  h1{margin:0;font-size:30px;letter-spacing:-.6px}
+  .primary{border:0;background:#111827;color:white;padding:11px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
+  .card{background:white;border:1px solid #e5e7eb;border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .kpi-label{font-size:12px;color:#6b7280;margin-bottom:8px}
+  .kpi-value{font-size:30px;font-weight:800}
+  .section-title{display:flex;justify-content:space-between;align-items:end;margin:6px 0 12px}
+  .section-title h2{font-size:18px;margin:0}
+  .muted{color:#6b7280;font-size:13px}
+  .calendar{overflow:auto;background:white;border:1px solid #e5e7eb;border-radius:16px}
+  table{width:100%;border-collapse:collapse;min-width:900px}
+  th,td{padding:14px;border-bottom:1px solid #eef0f3;border-right:1px solid #eef0f3;text-align:center;font-size:13px}
+  th{background:#fafafa;color:#6b7280;font-weight:700}
+  th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:white;z-index:1}
+  td.booked{background:#fff7ed}
+  td.occupied{background:#ecfdf5}
+  td.cleaning{background:#fef2f2}
+  td.free{background:#f9fafb;color:#9ca3af;cursor:pointer}
+  .status{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:700}
+  .s-booked{background:#ffedd5;color:#9a3412}
+  .s-occupied{background:#d1fae5;color:#065f46}
+  .s-cleaning{background:#fee2e2;color:#991b1b}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+  .list{display:grid;gap:10px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eef0f3}
+  .row:last-child{border-bottom:0}
+  .name{font-weight:700}
+  .pill{font-size:11px;padding:5px 8px;background:#f3f4f6;border-radius:999px}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+  .modal{width:min(620px,100%);background:white;border-radius:18px;padding:22px;max-height:90vh;overflow:auto}
+  .modal h3{margin:0 0 18px;font-size:22px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{display:grid;gap:6px}
+  .field.full{grid-column:1/-1}
+  label{font-size:12px;color:#6b7280;font-weight:700}
+  input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px 11px;font:inherit;background:#fff}
+  textarea{min-height:80px;resize:vertical}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+  .secondary{border:1px solid #d1d5db;background:white;padding:10px 14px;border-radius:10px;cursor:pointer}
+  .toast{position:fixed;right:24px;bottom:24px;background:#111827;color:white;padding:12px 16px;border-radius:10px;display:none;z-index:20}
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr}
+    aside{display:none}
+    main{padding:18px}
+    .grid{grid-template-columns:1fr 1fr}
+    .split{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="logo">ROOMS<small>Управление гостиницей</small></div>
+    <nav>
+      <button class="active">Главная</button>
+      <button>Календарь</button>
+      <button>Бронирования</button>
+      <button>Гости</button>
+      <button>Номера</button>
+      <button>Оплаты</button>
+      <button>История</button>
+      <button>Настройки</button>
+    </nav>
+    <div class="aside-bottom">Администратор · demo</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1>Сегодня, 4 октября</h1>
+        <div class="muted">Обзор загрузки гостиничных номеров</div>
+      </div>
+      <button class="primary" id="newBooking">+ Новое бронирование</button>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="kpi-label">Заезды сегодня</div><div class="kpi-value">2</div></div>
+      <div class="card"><div class="kpi-label">Выезды сегодня</div><div class="kpi-value">1</div></div>
+      <div class="card"><div class="kpi-label">Свободные номера</div><div class="kpi-value">2</div></div>
+      <div class="card"><div class="kpi-label">Требуют уборки</div><div class="kpi-value">1</div></div>
+    </div>
+
+    <div class="section-title">
+      <div>
+        <h2>Календарь загрузки</h2>
+        <div class="muted">Нажмите на свободную дату, чтобы создать бронирование</div>
+      </div>
+    </div>
+
+    <div class="calendar">
+      <table>
+        <thead>
+          <tr>
+            <th>Номер</th>
+            <th>4 окт</th><th>5 окт</th><th>6 окт</th><th>7 окт</th><th>8 окт</th><th>9 окт</th><th>10 окт</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>№11</b><br><span class="muted">2 места</span></td>
+            <td class="occupied"><span class="status s-occupied">Иванов</span></td>
+            <td class="occupied"><span class="status s-occupied">Иванов</span></td>
+            <td class="occupied"><span class="status s-occupied">Иванов</span></td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="booked"><span class="status s-booked">Петров</span></td>
+            <td class="booked"><span class="status s-booked">Петров</span></td>
+          </tr>
+          <tr>
+            <td><b>№12</b><br><span class="muted">2 места</span></td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="booked"><span class="status s-booked">Сидоров</span></td>
+            <td class="booked"><span class="status s-booked">Сидоров</span></td>
+            <td class="booked"><span class="status s-booked">Сидоров</span></td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+          </tr>
+          <tr>
+            <td><b>Мансарда</b><br><span class="muted">3 места</span></td>
+            <td class="cleaning"><span class="status s-cleaning">Уборка</span></td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+          </tr>
+          <tr>
+            <td><b>№14</b><br><span class="muted">4 места</span></td>
+            <td class="booked"><span class="status s-booked">Орлов</span></td>
+            <td class="booked"><span class="status s-booked">Орлов</span></td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+            <td class="free">Свободно</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split">
+      <div class="card">
+        <div class="section-title"><h2>Сегодня заезжают</h2></div>
+        <div class="list">
+          <div class="row"><div><div class="name">Петров Алексей</div><div class="muted">№11 · 15:00</div></div><span class="pill">15 000 ₽</span></div>
+          <div class="row"><div><div class="name">Орлов Михаил</div><div class="muted">№14 · 18:30</div></div><span class="pill">8 000 ₽</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>Требует внимания</h2></div>
+        <div class="list">
+          <div class="row"><div><div class="name">Мансарда</div><div class="muted">Требуется уборка</div></div><span class="status s-cleaning">Уборка</span></div>
+          <div class="row"><div><div class="name">Иванов Иван</div><div class="muted">Остаток к оплате</div></div><span class="pill">10 000 ₽</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h3>Новое бронирование</h3>
+    <div class="form-grid">
+      <div class="field">
+        <label>Номер</label>
+        <select><option>№11</option><option>№12</option><option>Мансарда</option><option>№14</option></select>
+      </div>
+      <div class="field">
+        <label>Количество гостей</label>
+        <input type="number" value="2" min="1" />
+      </div>
+      <div class="field">
+        <label>Дата заезда</label>
+        <input type="date" value="2026-10-05" />
+      </div>
+      <div class="field">
+        <label>Дата выезда</label>
+        <input type="date" value="2026-10-08" />
+      </div>
+      <div class="field full">
+        <label>ФИО гостя</label>
+        <input placeholder="Иванов Иван Иванович" />
+      </div>
+      <div class="field">
+        <label>Телефон</label>
+        <input placeholder="+7 999 000-00-00" />
+      </div>
+      <div class="field">
+        <label>Комплектов белья</label>
+        <input type="number" value="2" min="0" />
+      </div>
+      <div class="field">
+        <label>Стоимость</label>
+        <input type="number" placeholder="15000" />
+      </div>
+      <div class="field">
+        <label>Предоплата</label>
+        <input type="number" placeholder="5000" />
+      </div>
+      <div class="field">
+        <label>Способ оплаты</label>
+        <select><option>Перевод</option><option>Наличные</option><option>Карта</option><option>Другое</option></select>
+      </div>
+      <div class="field">
+        <label>Фото паспорта</label>
+        <input type="file" />
+      </div>
+      <div class="field full">
+        <label>Комментарий</label>
+        <textarea placeholder="Поздний заезд, дополнительное бельё и т.п."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="secondary" id="closeModal">Отмена</button>
+      <button class="primary" id="saveBooking">Создать бронирование</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Бронирование создано</div>
+
+<script>
+const modal = document.getElementById('modal');
+const openModal = () => modal.style.display='flex';
+const closeModal = () => modal.style.display='none';
+
+document.getElementById('newBooking').addEventListener('click', openModal);
+document.getElementById('closeModal').addEventListener('click', closeModal);
+
+document.querySelectorAll('td.free').forEach(td => td.addEventListener('click', openModal));
+
+document.getElementById('saveBooking').addEventListener('click', () => {
+  closeModal();
+  const toast = document.getElementById('toast');
+  toast.style.display='block';
+  setTimeout(()=>toast.style.display='none',1800);
+});
+
+modal.addEventListener('click', (e) => {
+  if(e.target === modal) closeModal();
+});
+</script>
+</body>
+</html>
