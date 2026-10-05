@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  owner
+  admin
+  staff
+}
+
+enum RoomStatus {
+  ready
+  cleaning
+  maintenance
+}
+
+enum BookingStatus {
+  booked
+  checked_in
+  completed
+  cancelled
+}
+
+enum PaymentMethod {
+  cash
+  card
+  transfer
+  other
+}
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  passwordHash   String
+  role           Role       @default(staff)
+  active         Boolean    @default(true)
+  sessionVersion Int        @default(1)
+  createdAt      DateTime   @default(now())
+  auditLogs      AuditLog[]
+}
+
+model Room {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  capacity      Int
+  status        RoomStatus     @default(ready)
+  priceCents    Int            @default(0)
+  bookings      Booking[]
+  cleaningTasks CleaningTask[]
+}
+
+model Guest {
+  id        String     @id @default(cuid())
+  name      String
+  phone     String     @default("")
+  email     String     @default("")
+  notes     String     @default("")
+  createdAt DateTime   @default(now())
+  bookings  Booking[]
+  documents Document[]
+}
+
+model Booking {
+  id            String         @id @default(cuid())
+  roomId        String
+  guestId       String
+  room          Room           @relation(fields: [roomId], references: [id])
+  guest         Guest          @relation(fields: [guestId], references: [id])
+  start         DateTime       @db.Date
+  end           DateTime       @db.Date
+  guestCount    Int
+  linen         Int            @default(0)
+  totalCents    Int
+  notes         String         @default("")
+  status        BookingStatus  @default(booked)
+  checkedInAt   DateTime?
+  checkedOutAt  DateTime?
+  version       Int            @default(1)
+  createdAt     DateTime       @default(now())
+  payments      Payment[]
+  cleaningTasks CleaningTask[]
+
+  @@index([roomId, start, end])
+  @@index([guestId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  bookingId   String
+  booking     Booking       @relation(fields: [bookingId], references: [id])
+  amountCents Int
+  method      PaymentMethod
+  kind        String        @default("payment")
+  note        String        @default("")
+  createdAt   DateTime      @default(now())
+
+  @@index([bookingId])
+}
+
+model CleaningTask {
+  id          String    @id @default(cuid())
+  roomId      String
+  room        Room      @relation(fields: [roomId], references: [id])
+  bookingId   String?   @unique
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  done        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  guestId    String
+  guest      Guest    @relation(fields: [guestId], references: [id])
+  name       String
+  mime       String
+  ciphertext Bytes
+  iv         Bytes
+  tag        Bytes
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entityId  String
+  details   Json     @default("{}")
+  actorName String   @default("")
+  actorRole String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model LoginAttempt {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+}
